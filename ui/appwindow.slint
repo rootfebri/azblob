@@ -1,0 +1,26 @@
+import { Button, VerticalBox } from "std-widgets.slint";
+
+export component AppWindow inherits Window {
+    // set_ get_ @var
+    in-out property<int> counter: 42;
+    callback request-increase-value();
+    callback request-decrease-value();
+
+    VerticalBox {
+        Text {
+            text: "Counter: \{root.counter}";
+        }
+        Button {
+            text: "Increase value";
+            clicked => {
+                root.request-increase-value();
+            }
+        }
+        Button{
+            text: "Decrease value";
+            clicked => {
+                root.request-decrease-value();
+            }
+        }
+    }
+}
