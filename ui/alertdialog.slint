@@ -1,0 +1,35 @@
+
+import { StandardButton } from "std-widgets.slint";
+export component AlertWindow inherits Dialog {
+    z: 100;
+    property <bool> is-visible: false;
+    property <string> message;
+
+    public function set_props(msg: string, vsbl: bool) {
+        message = msg;
+        is-visible = vsbl;
+    }
+
+    always-on-top: true;
+    visible: is-visible;
+    width: 200px;
+    height: 100px;
+    
+
+    title: "Alert";
+    Text {
+        wrap: word-wrap;
+        color: black;
+        stroke: #ff0000;
+        stroke-style: center;
+        stroke-width: 0.3px;
+        text: message;
+    }
+
+    StandardButton {
+        kind: close;
+        clicked => {
+            set_props("", false);
+        }
+    }
+}

@@ -1,26 +1,199 @@
-import { Button, VerticalBox } from "std-widgets.slint";
+import { LineEdit, GridBox, HorizontalBox, ScrollView, ProgressIndicator, Button, AboutSlint, StandardButton, TextEdit, ListView, SpinBox, Spinner } from "std-widgets.slint";
+import { AlertWindow } from "alertdialog.slint";
 
 export component AppWindow inherits Window {
-    // set_ get_ @var
-    in-out property<int> counter: 42;
-    callback request-increase-value();
-    callback request-decrease-value();
+    in-out property <bool> app-state-enabled: false;
+    in-out property <[string]> file-lists;
+    in-out property <[string]> generated-urls;
 
-    VerticalBox {
-        Text {
-            text: "Counter: \{root.counter}";
-        }
-        Button {
-            text: "Increase value";
-            clicked => {
-                root.request-increase-value();
-            }
-        }
-        Button{
-            text: "Decrease value";
-            clicked => {
-                root.request-decrease-value();
-            }
+    // in-out property <[string]> updated-urls;
+    // public function update-generated-urls(old: [string], new: string) {
+    //     updated-urls = [old, new];
+    //     generated-urls = updated-urls;
+    // }
+
+    out property <string> token: access-token.text;
+    out property <string> container: container.text;
+    out property <string> subdomain: sub-domain.text;
+
+    // Style
+    title: "App Name";
+    preferred-height: 800px;
+    preferred-width: 1400px;
+    min-height: 800px;
+    min-width: 1400px;
+    background: #272727;
+
+    callback start-upload([string]);
+    callback load-files();
+
+    property <string> message;
+    property <bool> show-alert: false;
+
+    alert := AlertWindow { x: 675px; y: 300px; }
+
+    /** Load file */
+    Button {
+        preferred-height: 32px;
+        x: 905px;
+        y: 373px;
+        preferred-width: 123px;
+        text: "Load Files";
+        clicked => { root.load-files() }
+    }
+
+    /** Upload Button */
+    Button {
+        preferred-height: 32px;
+        x: 906px;
+        y: 327px;
+        preferred-width: 123px;
+        text: "Upload";
+        clicked => {
+            if (file-lists.length < 1) { alert.set_props("No file detected!", true) }
+            else { start-upload(file-lists) }
         }
     }
+
+    // List of loaded files
+    list_view_of_files := ListView {
+        preferred-width: 863px;
+        preferred-height: 367px;
+        width: 863px;
+        height: 367px;
+        x: 32px;
+        y: 72px;
+
+        for file in file-lists: Rectangle {
+            width: parent.width;
+            Text { text: file; }
+        }
+    }
+
+    ProgressIndicator {
+        height: 15px;
+        width: 863px;
+        x: 32px;
+        y: 443px;
+        preferred-width: 670px;
+    }
+
+    /** Clear file */
+    Button {
+        preferred-height: 32px;
+        x: 906px;
+        y: 420px;
+        preferred-width: 123px;
+        text: "Clear Files";
+        clicked => { file-lists = [] }
+    }
+
+    Text {
+        preferred-height: 32px;
+        preferred-width: 140px;
+        font-size: 24px;
+        font-weight: 800;
+        horizontal-alignment: center;
+        text: "File html";
+        vertical-alignment: center;
+        x: 33px;
+        y: 29px;
+    }
+
+    sub-domain:= LineEdit {
+        preferred-height: 42px;
+        preferred-width: 440px;
+        placeholder-text: "Sub-domain: (e.g artikel)";
+        x: 907px;
+        y: 140px;
+        enabled: !app-state-enabled;
+    }
+
+    container:= LineEdit {
+        enabled: !app-state-enabled;
+        preferred-height: 42px;
+        preferred-width: 440px;
+        placeholder-text: "Container: (e.g $web)";
+        x: 907px;
+        y: 200px;
+    }
+
+    access-token:= LineEdit {
+        enabled: !app-state-enabled;
+        preferred-height: 42px;
+        preferred-width: 440px;
+        input-type: password;
+        placeholder-text: "Access Token";
+        x: 907px;
+        y: 260px;
+    }
+
+
+    Text {
+        preferred-height: 31px;
+        x: 785px;
+        y: 5px;
+        preferred-width: 83px;
+        horizontal-alignment: center;
+        text: "Total: 10002";
+        vertical-alignment: center;
+    }
+
+    list_view_of_urls := ListView {
+        preferred-width: 874px;
+        preferred-height: 299px;
+        x: 27px;
+        y: 493px;
+
+        for url in generated-urls: Rectangle {
+            width: parent.width;
+            Text { text: url; }
+        }
+    }
+
+    Text {
+        preferred-width: 77px;
+        preferred-height: 39px;
+        vertical-alignment: center;
+        text: "Status: ";
+        x: 907px;
+        y: 74px;
+    }
+
+
+    Text {
+        preferred-width: 77px;
+        preferred-height: 39px;
+        vertical-alignment: center;
+        font-size: 16px;
+        font-weight: 700;
+        x: 950px;
+        y: 75px;
+        z: 1;
+        color: green;
+        text: "READY";
+    }
+
+    AboutSlint {
+        x: 1198px;
+        y: 720px;
+        width: 154px;
+        height: 79px;
+    }
+
+    
+    Image {
+        height: 50px;
+        source: @image-url("author.jpg");
+        x: 1106px;
+        y: 730px;
+    }
+    Button {
+        x: 1006px;
+        y: 736px;
+        colorize-icon: false;
+        icon: @image-url("telegram.png");
+        preferred-width: 76px;
+    }
+
 }
