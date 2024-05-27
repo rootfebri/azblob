@@ -1,6 +1,7 @@
+use std::fs::File;
 use std::rc::Rc;
-use clipboard::{ClipboardProvider, ClipboardContext};
 
+use clipboard::{ClipboardContext, ClipboardProvider};
 use reqwest::{Error, header::{DATE, HeaderMap}};
 use slint::{Model, ModelRc, SharedString, VecModel};
 
@@ -23,8 +24,8 @@ fn main() -> Result<(), slint::PlatformError> {
                     let token: SharedString = ui.get_token();
 
                     for file in files.iter() {
-                        let full_url: String = format!("https://{subdomain}.blob.core.windows.net/{container}/{file}?restype={RES_TYPE}");
-                        let file_buf = std::fs::File::open(format!("{}", file.as_str()));
+                        let full_url: String = format!("https://{subdomain}.blob.core.windows.net/{container}");
+                        let file_buf = File::open(format!("{}", file.as_str()));
 
                         if let Ok(file_res) = file_buf {
                             let response = upload_file(&full_url, &format!("{token}"), file_res);
@@ -130,16 +131,20 @@ fn main() -> Result<(), slint::PlatformError> {
 }
 
 // TODO: Get read file content as byte or string
-fn upload_file(url: &String, token: &String, body: std::fs::File) -> Result<u16, Error> {
+fn upload_file(url: &String, token: &String, body: File) -> Result<u16, Error> {
+    let file: String = format!("{body:?}");
+    let file_content = File::open(file.clone()).unwrap();
+    let fmt_url: String = format!("{url}/{file}?restype={RES_TYPE}");
+
     let mut headers = HeaderMap::new();
     headers.insert("Authorization", format!("SharedKey myaccount:{token:?}").parse().unwrap());
     headers.insert("x-ms-date", DATE.into());
     headers.insert("x-ms-version", "2024-05-25".parse().unwrap());
 
     let client = reqwest::blocking::Client::new();
-    let res = client.put(url)
+    let res = client.put(&fmt_url)
         .headers(headers)
-        .body(body)
+        .body(file_content)
         .send()?;
 
     println!("Response: {:?}", res);
