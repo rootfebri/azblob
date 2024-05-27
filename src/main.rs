@@ -1,4 +1,5 @@
 use std::fs::File;
+use std::path::Path;
 use std::rc::Rc;
 
 use clipboard::{ClipboardContext, ClipboardProvider};
@@ -7,13 +8,10 @@ use slint::{Model, ModelRc, SharedString, VecModel};
 
 slint::include_modules!();
 
-const RES_TYPE: &str = "restype=container";
 const CREATED: u16 = 201;
-
 fn main() -> Result<(), slint::PlatformError> {
     let ui = AppWindow::new()?;
-
-    // Not sure
+    // Done
     ui.on_start_upload({
             let ui_handle = ui.as_weak();
             move |files: ModelRc<SharedString>| {
@@ -24,38 +22,45 @@ fn main() -> Result<(), slint::PlatformError> {
                     let token: SharedString = ui.get_token();
 
                     for file in files.iter() {
-                        let full_url: String = format!("https://{subdomain}.blob.core.windows.net/{container}");
-                        let file_buf = File::open(format!("{}", file.as_str()));
 
-                        if let Ok(file_res) = file_buf {
-                            let response = upload_file(&full_url, &format!("{token}"), file_res);
+                        let file_name = Path::new(file.as_str())
+                            .file_name()
+                            .unwrap()
+                            .to_str()
+                            .clone()
+                            .unwrap();
+
+                        let full_url = format!("https://{}.blob.core.windows.net/{}/{}", subdomain, container, &file_name);
+
+                        let as_file_buf = File::open(format!("{}", file.as_str()));
+
+                        if let Ok(_) = as_file_buf {
+                            let response = upload_file(&full_url, token.as_str().into(), file.as_str());
                             if let Ok(status_code) = response
                             {
                                 match status_code
                                 {
-                                    CREATED =>
-                                        {
-                                            let prev_urls: ModelRc<SharedString> = ui.get_generated_urls();
-                                            let mut items: Vec<SharedString> = prev_urls.iter().collect();
-                                            items.push(full_url.into());
+                                    CREATED  => {
+                                        let prev_urls: ModelRc<SharedString> = ui.get_generated_urls();
+                                        let mut items: Vec<SharedString> = prev_urls.iter().collect();
+                                        items.push(full_url.clone().into());
 
-                                            let rc_vec_model: Rc<VecModel<SharedString>> = Rc::new(VecModel::from(items.clone()));
-                                            let generated_urls: ModelRc<SharedString> = ModelRc::from(rc_vec_model.clone());
+                                        let rc_vec_model: Rc<VecModel<SharedString>> = Rc::new(VecModel::from(items.clone()));
+                                        let generated_urls: ModelRc<SharedString> = ModelRc::from(rc_vec_model.clone());
 
-                                            ui.set_generated_urls(generated_urls);
-                                        }
+                                        ui.set_generated_urls(generated_urls);
+                                    }
 
-                                    other =>
-                                        {
-                                            let prev_urls: ModelRc<SharedString> = ui.get_generated_urls();
-                                            let mut items: Vec<SharedString> = prev_urls.iter().collect();
-                                            items.push(format!("{} -> {:?}", <String as Into<SharedString>>::into(full_url), other).into());
+                                    other => {
+                                        let prev_urls: ModelRc<SharedString> = ui.get_generated_urls();
+                                        let mut items: Vec<SharedString> = prev_urls.iter().collect();
+                                        items.push(format!("{} -> {:?}", <String as Into<SharedString>>::into(full_url.clone()), other).into());
 
-                                            let rc_vec_model: Rc<VecModel<SharedString>> = Rc::new(VecModel::from(items.clone()));
-                                            let generated_urls: ModelRc<SharedString> = ModelRc::from(rc_vec_model.clone());
+                                        let rc_vec_model: Rc<VecModel<SharedString>> = Rc::new(VecModel::from(items.clone()));
+                                        let generated_urls: ModelRc<SharedString> = ModelRc::from(rc_vec_model.clone());
 
-                                            ui.set_generated_urls(generated_urls);
-                                        }
+                                        ui.set_generated_urls(generated_urls);
+                                    }
                                 }
                             }
                             else if let Err(err_code) = response
@@ -70,7 +75,7 @@ fn main() -> Result<(), slint::PlatformError> {
                                 ui.set_generated_urls(generated_urls);
                             }
                         }
-                        else if let Err(err_response)  = file_buf {
+                        else if let Err(err_response) = as_file_buf {
                             let prev_urls: ModelRc<SharedString> = ui.get_generated_urls();
                             let mut items: Vec<SharedString> = prev_urls.iter().collect();
                             items.push(format!("{} -> {:?}", <String as Into<SharedString>>::into(full_url.clone()), <String as Into<SharedString>>::into(err_response.to_string())).into());
@@ -84,8 +89,7 @@ fn main() -> Result<(), slint::PlatformError> {
                 }
             }
         });
-
-    // Not sure
+    // Done
     ui.on_load_files({
         let ui_handle = ui.as_weak();
         move || {
@@ -106,7 +110,6 @@ fn main() -> Result<(), slint::PlatformError> {
             }
         }
     });
-
     // DONE
     ui.on_send_to_clipboard({
         let ui_handle = ui.as_weak();
@@ -121,32 +124,25 @@ fn main() -> Result<(), slint::PlatformError> {
 
                 let mut ctx: ClipboardContext = clipboard::ClipboardProvider::new().unwrap();
                 ctx.set_contents(urls_string.clone()).unwrap();
-
-                println!("Copied: {urls_string}");
             }
         }
     });
-
     ui.run()
 }
 
-// TODO: Get read file content as byte or string
-fn upload_file(url: &String, token: &String, body: File) -> Result<u16, Error> {
-    let file: String = format!("{body:?}");
-    let file_content = File::open(file.clone()).unwrap();
-    let fmt_url: String = format!("{url}/{file}?restype={RES_TYPE}");
+fn upload_file(url: &String, token: &str, path_to_file: &str) -> Result<u16, Error> {
+    let body: File = File::open(path_to_file).unwrap();
 
     let mut headers = HeaderMap::new();
-    headers.insert("Authorization", format!("SharedKey myaccount:{token:?}").parse().unwrap());
+    headers.insert("Authorization", token.parse().unwrap() );
     headers.insert("x-ms-date", DATE.into());
     headers.insert("x-ms-version", "2024-05-25".parse().unwrap());
 
     let client = reqwest::blocking::Client::new();
-    let res = client.put(&fmt_url)
+    let res = client.put(url)
         .headers(headers)
-        .body(file_content)
+        .body(body)
         .send()?;
 
-    println!("Response: {:?}", res);
     Ok(res.status().as_u16())
 }
