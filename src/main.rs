@@ -134,7 +134,7 @@ fn upload_file(url: &String, token: &str, path_to_file: &str) -> Result<u16, Err
     let body: File = File::open(path_to_file).unwrap();
 
     let mut headers = HeaderMap::new();
-    headers.insert("Authorization", token.parse().unwrap() );
+    headers.insert("Authorization", token.parse().unwrap());
     headers.insert("x-ms-date", DATE.into());
     headers.insert("x-ms-version", "2024-05-25".parse().unwrap());
 
