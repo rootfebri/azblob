@@ -1,4 +1,5 @@
 use std::rc::Rc;
+use clipboard::{ClipboardProvider, ClipboardContext};
 
 use reqwest::{Error, header::{DATE, HeaderMap}};
 use slint::{Model, ModelRc, SharedString, VecModel};
@@ -6,10 +7,12 @@ use slint::{Model, ModelRc, SharedString, VecModel};
 slint::include_modules!();
 
 const RES_TYPE: &str = "restype=container";
-const CREATED: u16 = 201; // Use a constant for the created status code
+const CREATED: u16 = 201;
 
 fn main() -> Result<(), slint::PlatformError> {
     let ui = AppWindow::new()?;
+
+    // Not sure
     ui.on_start_upload({
             let ui_handle = ui.as_weak();
             move |files: ModelRc<SharedString>| {
@@ -81,6 +84,7 @@ fn main() -> Result<(), slint::PlatformError> {
             }
         });
 
+    // Not sure
     ui.on_load_files({
         let ui_handle = ui.as_weak();
         move || {
@@ -102,10 +106,31 @@ fn main() -> Result<(), slint::PlatformError> {
         }
     });
 
+    // DONE
+    ui.on_send_to_clipboard({
+        let ui_handle = ui.as_weak();
+        move || {
+            if let Some(ui) = ui_handle.upgrade() {
+                let mut raw_urls: Vec<String> = Vec::new();
+                ui.get_generated_urls()
+                    .iter()
+                    .for_each(|val| raw_urls.push(val.to_string()));
+
+                let urls_string = raw_urls.join("\n");
+
+                let mut ctx: ClipboardContext = clipboard::ClipboardProvider::new().unwrap();
+                ctx.set_contents(urls_string.clone()).unwrap();
+
+                println!("Copied: {urls_string}");
+            }
+        }
+    });
+
     ui.run()
 }
 
-async fn upload_file(url: &String, token: &String, body: std::fs::File) -> Result<u16, Error> {
+todo!("Get read file content as byte or string");
+fn upload_file(url: &String, token: &String, body: std::fs::File) -> Result<u16, Error> {
     let mut headers = HeaderMap::new();
     headers.insert("Authorization", format!("SharedKey myaccount:{token:?}").parse().unwrap());
     headers.insert("x-ms-date", DATE.into());

@@ -1,35 +1,45 @@
 
 import { StandardButton } from "std-widgets.slint";
-export component AlertWindow inherits Dialog {
+export component AlertWindow inherits Rectangle {
     z: 100;
     property <bool> is-visible: false;
+    background: #000;
+    border-color: #863232;
+    border-radius: 20px;
+    border-width: 1px;
     property <string> message;
+    visible: is-visible;
+    drop-shadow-offset-x: 1px;
+    drop-shadow-offset-y: 2px;
+    drop-shadow-blur: 10px;
+    drop-shadow-color: gray;
 
     public function set_props(msg: string, vsbl: bool) {
         message = msg;
         is-visible = vsbl;
     }
 
-    always-on-top: true;
-    visible: is-visible;
-    width: 200px;
-    height: 100px;
-    
+    Dialog {
+        title: "Alert";
+        always-on-top: true;
+        width: 200px;
+        height: 200px;
 
-    title: "Alert";
-    Text {
-        wrap: word-wrap;
-        color: black;
-        stroke: #ff0000;
-        stroke-style: center;
-        stroke-width: 0.3px;
-        text: message;
-    }
+        Text {
+            wrap: word-wrap;
+            color: white;
+            font-size: 16px;
+            font-weight: 900;
+            text: "\{message}";
+        }
+        
+        StandardButton {
+            kind: close;
 
-    StandardButton {
-        kind: close;
-        clicked => {
-            set_props("", false);
+            clicked => {
+                set_props("", false);
+            }
         }
     }
+
 }

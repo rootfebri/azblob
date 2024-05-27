@@ -1,36 +1,62 @@
-import { LineEdit, GridBox, HorizontalBox, ScrollView, ProgressIndicator, Button, AboutSlint, StandardButton, TextEdit, ListView, SpinBox, Spinner } from "std-widgets.slint";
+import { TextEdit, LineEdit, GridBox, HorizontalBox, ScrollView, ProgressIndicator, Button, AboutSlint, StandardButton, ListView, SpinBox, Spinner, VerticalBox } from "std-widgets.slint";
 import { AlertWindow } from "alertdialog.slint";
 
 export component AppWindow inherits Window {
     in-out property <bool> app-state-enabled: false;
-    in-out property <[string]> file-lists;
-    in-out property <[string]> generated-urls;
-
-    // in-out property <[string]> updated-urls;
-    // public function update-generated-urls(old: [string], new: string) {
-    //     updated-urls = [old, new];
-    //     generated-urls = updated-urls;
-    // }
 
     out property <string> token: access-token.text;
     out property <string> container: container.text;
     out property <string> subdomain: sub-domain.text;
+    in-out property <[string]> file-lists;
+    in-out property <[string]> generated-urls: [];
 
     // Style
     title: "App Name";
     preferred-height: 800px;
     preferred-width: 1400px;
-    min-height: 800px;
-    min-width: 1400px;
+    height: 815px;
+    width: 1400px;
     background: #272727;
+    default-font-size: 14px;
+    default-font-weight: 700;
 
     callback start-upload([string]);
     callback load-files();
+    callback send-to-clipboard();
 
     property <string> message;
     property <bool> show-alert: false;
 
-    alert := AlertWindow { x: 675px; y: 300px; }
+    popup := PopupWindow {
+        max-height: 300px;
+        height: 100px;
+        width: 200px;
+        x: 700px;
+        y: 300px;
+        close-on-click: false;
+
+        Rectangle {
+            background: #757575;
+            border-radius: 15px;
+            height: 100%;
+            width: 100%;
+            VerticalBox {
+                Text {
+                    wrap: word-wrap;
+                    color: wheat;
+                    text: "\{message}";
+                }
+
+                StandardButton {
+                    kind: close;
+                    clicked => {
+                        message = "";
+                        popup.close();
+                    }
+                }
+            }
+        }
+    }
 
     /** Load file */
     Button {
@@ -50,31 +76,21 @@ export component AppWindow inherits Window {
         preferred-width: 123px;
         text: "Upload";
         clicked => {
-            if (file-lists.length < 1) { alert.set_props("No file detected!", true) }
-            else { start-upload(file-lists) }
-        }
-    }
-
-    // List of loaded files
-    list_view_of_files := ListView {
-        preferred-width: 863px;
-        preferred-height: 367px;
-        width: 863px;
-        height: 367px;
-        x: 32px;
-        y: 72px;
-
-        for file in file-lists: Rectangle {
-            width: parent.width;
-            Text { text: file; }
+            if (file-lists.length < 1) {
+                message = "No file(s) detected!";
+                popup.show();
+            } else {
+                start-upload(file-lists)
+             }
         }
     }
 
     ProgressIndicator {
         height: 15px;
-        width: 863px;
-        x: 32px;
-        y: 443px;
+        width: 800px;
+        progress: 1;
+        x: 65px;
+        y: 445px;
         preferred-width: 670px;
     }
 
@@ -85,12 +101,33 @@ export component AppWindow inherits Window {
         y: 420px;
         preferred-width: 123px;
         text: "Clear Files";
-        clicked => { file-lists = [] }
+        clicked => { file-lists = []; }
+    }
+
+    /** Clear url */
+    Button {
+        preferred-height: 32px;
+        x: 900px;
+        y: 676px;
+        preferred-width: 123px;
+        text: "Clear URLs";
+        clicked => { generated-urls = []; }
+    }
+
+    /** Copy urls */
+    Button {
+        preferred-height: 32px;
+        x: 900px;
+        y: 637px;
+        preferred-width: 123px;
+        text: "Copy";
+        clicked => { send-to-clipboard() }
     }
 
     Text {
         preferred-height: 32px;
         preferred-width: 140px;
+        color: #fff;
         font-size: 24px;
         font-weight: 800;
         horizontal-alignment: center;
@@ -128,26 +165,55 @@ export component AppWindow inherits Window {
         y: 260px;
     }
 
-
-    Text {
-        preferred-height: 31px;
-        x: 785px;
-        y: 5px;
-        preferred-width: 83px;
-        horizontal-alignment: center;
-        text: "Total: 10002";
-        vertical-alignment: center;
+    // List of loaded files
+    Rectangle {
+        preferred-width: 863px;
+        preferred-height: 367px;
+        width: 863px;
+        height: root.height * 45%;
+        border-radius: 30px;
+        background: #1a1a1a;
+        x: 32px;
+        y: 72px;
+        ListView {
+            for file in file-lists: Rectangle {
+                max-width: parent.width * 87%;
+                border-width: 0.2px;
+                border-color: #fff;
+                border-radius: 5px;
+                Text {
+                    color: #fff;
+                    max-width: parent.width;
+                    wrap: word-wrap;
+                    font-size: 14px;
+                    text: file;
+                }
+            }
+        }
     }
 
-    list_view_of_urls := ListView {
-        preferred-width: 874px;
-        preferred-height: 299px;
+    // List of uploaded URLs
+    Rectangle {
+        width: 863px;
+        height: root.height * 35%;
         x: 27px;
         y: 493px;
-
-        for url in generated-urls: Rectangle {
-            width: parent.width;
-            Text { text: url; }
+        background: #1a1a1a;
+        border-radius: 30px;
+        ListView {
+            for url in generated-urls: Rectangle {
+                border-width: 0.2px;
+                border-color: #fff;
+                border-radius: 5px;
+                max-height: 30px;
+                Text {
+                    color: #fff;
+                    width: 95%;
+                    overflow: clip;
+                    text: url;
+                    wrap: word-wrap;
+                 }
+            }
         }
     }
 
@@ -155,6 +221,7 @@ export component AppWindow inherits Window {
         preferred-width: 77px;
         preferred-height: 39px;
         vertical-alignment: center;
+        color: white;
         text: "Status: ";
         x: 907px;
         y: 74px;
@@ -167,8 +234,8 @@ export component AppWindow inherits Window {
         vertical-alignment: center;
         font-size: 16px;
         font-weight: 700;
-        x: 950px;
-        y: 75px;
+        x: 970px;
+        y: 73px;
         z: 1;
         color: green;
         text: "READY";
@@ -188,6 +255,7 @@ export component AppWindow inherits Window {
         x: 1106px;
         y: 730px;
     }
+
     Button {
         x: 1006px;
         y: 736px;
