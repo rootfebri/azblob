@@ -129,7 +129,7 @@ fn main() -> Result<(), slint::PlatformError> {
     ui.run()
 }
 
-todo!("Get read file content as byte or string");
+// TODO: Get read file content as byte or string
 fn upload_file(url: &String, token: &String, body: std::fs::File) -> Result<u16, Error> {
     let mut headers = HeaderMap::new();
     headers.insert("Authorization", format!("SharedKey myaccount:{token:?}").parse().unwrap());
